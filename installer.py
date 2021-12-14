@@ -78,10 +78,9 @@ quitting at any point will stop the process and no changes will be made.
 
     def check_directory(self):
         # Check the required files exists: docker-compose.yml, frontend/config.json
-        if os.path.exists('./docker-compose.yml') and \
-           os.path.exists('./frontend/config.json'):
-            pass
-        else:
+        if not os.path.exists('./docker-compose.yml') or not os.path.exists(
+            './frontend/config.json'
+        ):
             print(colours.FAIL + """
 You must be running this from the directory containing the installer.
 Please cd to the directory and run the installer again.
@@ -208,9 +207,7 @@ that needs changing. If they are correct press enter to continue.
             print("{}. {} = {}".format(i, key, value))
 
         choice = self.input("Choose a number to correct or press enter to continue: ")
-        if choice == "":
-            pass
-        else:
+        if choice != "":
             self.edit_choice(choice)
 
     def edit_choice(self, choice):
@@ -239,10 +236,7 @@ that needs changing. If they are correct press enter to continue.
             as_json = json.loads(data)
         with open('frontend/config.json', 'w') as f:
             as_json['api_endpoint'] = api_endpoint
-            if self.settings['ENABLE_CRM'] == 'True':
-                as_json['crm_enabled'] = True
-            else:
-                as_json['crm_enabled'] = False
+            as_json['crm_enabled'] = self.settings['ENABLE_CRM'] == 'True'
             json_string = json.dumps(as_json, indent=4)
             f.write(json_string)
         os.chmod('frontend/config.json', 0o775)
@@ -257,9 +251,10 @@ DB_USER=postgres
 DB_HOST=db
 DB_PORT=5432
 """
-        env_string = ''
-        for key, value in self.settings.items():
-            env_string += key + '=' + value + '\n'
+        env_string = ''.join(
+            key + '=' + value + '\n' for key, value in self.settings.items()
+        )
+
         env_string += required_settings
         with open('.env', 'w+') as f:
             f.write(env_string)
